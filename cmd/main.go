@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/AntonZatsepilin/goAvitoDB/internal/generator"
 	"github.com/AntonZatsepilin/goAvitoDB/models"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
@@ -59,6 +60,8 @@ func main() {
 	}
 
 	logrus.Info("database migration completed successfully")
+
+	generator.GenerateFakeData(db)
 }
 
 func initConfig() error {
