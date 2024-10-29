@@ -24,7 +24,3 @@ docker-compose up --build
 ```
 
 In order to check the database operation go to http://localhost:5050
-
-<p align="center">
-  <img src=diagram/diagram.png width=50% />
-</p>
