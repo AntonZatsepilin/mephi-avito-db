@@ -9,7 +9,13 @@ DB_PASSWORD=...
 
 PGADMIN_DEFAULT_EMAIL=...
 PGADMIN_DEFAULT_PASSWORD=...
-``
+```
+<details>
+  <summary>Entity-relationship diagram</summary>
+  <p align="center">
+    <img src=https://ibb.co/zJ7jBJT width=50% />
+  </p>
+</details>
 
 Enter this command in a terminal running Docker:
 
@@ -18,3 +24,7 @@ docker-compose up --build
 ```
 
 In order to check the database operation go to http://localhost:5050
+
+<p align="center">
+  <img src=https://ibb.co/zJ7jBJT width=50% />
+</p>

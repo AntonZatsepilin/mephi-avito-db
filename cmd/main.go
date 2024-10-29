@@ -5,8 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/AntonZatsepilin/goAvitoDB/internal/generator"
-	"github.com/AntonZatsepilin/goAvitoDB/models"
+	"github.com/AntonZatsepilin/goAvitoDB/internal/models"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -15,7 +14,6 @@ import (
 )
 
 func main() {
-
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 
 	if err := initConfig(); err != nil {
@@ -42,18 +40,15 @@ func main() {
 
 	err = db.AutoMigrate(
 		&models.User{},
-		&models.Chat{},
-		&models.ChatUser{},
-		&models.Category{},
-		&models.CategoryRelation{},
-		&models.Listing{},
-		&models.ListingLocation{},
 		&models.Location{},
+		&models.Chat{},
+		&models.Category{},
+		&models.Listing{},
 		&models.Message{},
-		&models.MessageFile{},
 		&models.Review{},
-		&models.ReviewFile{},
 		&models.File{},
+		&models.ReviewFile{},
+		&models.MessageFile{},
 	)
 	if err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
@@ -61,7 +56,7 @@ func main() {
 
 	logrus.Info("database migration completed successfully")
 
-	generator.GenerateFakeData(db)
+	// generator.GenerateFakeData(db)
 }
 
 func initConfig() error {
