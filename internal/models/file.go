@@ -4,8 +4,8 @@ import "gorm.io/gorm"
 
 type File struct {
 	gorm.Model
-	Name     string
-	URL      string
-	Messages []MessageFile
-	Reviews  []ReviewFile
+
+	ReviewID  uint   `gorm:"not null;index"`
+	Name      string `gorm:"not null"`
+	MessageID uint   `gorm:"not null;index"`
 }

@@ -4,9 +4,8 @@ import "gorm.io/gorm"
 
 type Location struct {
 	gorm.Model
-	City     string
-	Country  string
-	Region   string
-	Users    []User
-	Listings []Listing
+	Users   []User
+	Posts   []Post
+	City    string `gorm:"not null"`
+	Country string `gorm:"not null"`
 }

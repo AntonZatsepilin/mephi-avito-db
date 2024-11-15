@@ -39,16 +39,15 @@ func main() {
 	}
 
 	err = db.AutoMigrate(
-		&models.User{},
 		&models.Location{},
+		&models.User{},
 		&models.Chat{},
 		&models.Category{},
-		&models.Listing{},
 		&models.Message{},
-		&models.Review{},
 		&models.File{},
-		&models.ReviewFile{},
-		&models.MessageFile{},
+		&models.Post{},
+		&models.Password{},
+		&models.Review{},
 	)
 	if err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
@@ -56,7 +55,6 @@ func main() {
 
 	logrus.Info("database migration completed successfully")
 
-	// generator.GenerateFakeData(db)
 }
 
 func initConfig() error {
