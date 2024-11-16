@@ -5,7 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/AntonZatsepilin/goAvitoDB/internal/models"
+	"github.com/AntonZatsepilin/goAvitoDB.git/internal/generator"
+	"github.com/AntonZatsepilin/goAvitoDB.git/internal/models"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -14,7 +15,7 @@ import (
 )
 
 func main() {
-	logrus.SetFormatter(new(logrus.JSONFormatter))
+	logrus.SetFormatter(new(logrus.TextFormatter))
 
 	if err := initConfig(); err != nil {
 		logrus.Fatalf("error init configs: %s", err.Error())
@@ -54,6 +55,12 @@ func main() {
 	}
 
 	logrus.Info("database migration completed successfully")
+
+	if err := generator.GenerateFakeData(db, 100000); err != nil {
+		logrus.Fatalf("error generating fake data: %v", err)
+	}
+
+	logrus.Info("fake data generation completed successfully")
 
 }
 
