@@ -1,0 +1,1 @@
+/usr/lib/postgresql/17/bin/postgres "-c" "work_mem=256MB" "-c" "maintenance_work_mem=256MB" "-c" "max_wal_size=10GB" "-c" "max_connections=1000"

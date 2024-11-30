@@ -1,6 +1,6 @@
 db:
   username: "postgres"
-  host: "mephi-db"
+  host: "avito-db"
   port: "5432"
-  dbname: "avito-db"
+  dbname: "db"
   sslmode: "disable"

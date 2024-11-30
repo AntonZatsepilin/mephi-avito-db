@@ -8,4 +8,5 @@ type File struct {
 	ReviewID  uint   `gorm:"not null;index"`
 	Name      string `gorm:"not null"`
 	MessageID uint   `gorm:"not null;index"`
+	Url       string `gorm:"not null"`
 }

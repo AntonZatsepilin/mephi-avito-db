@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/AntonZatsepilin/goAvitoDB.git/internal/generator"
 	"github.com/AntonZatsepilin/goAvitoDB.git/internal/models"
@@ -45,21 +46,27 @@ func main() {
 		&models.Chat{},
 		&models.Category{},
 		&models.Message{},
-		&models.File{},
 		&models.Post{},
 		&models.Password{},
 		&models.Review{},
+		&models.File{},
 	)
 	if err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 
 	logrus.Info("database migration completed successfully")
-
-	if err := generator.GenerateFakeData(db, 100000); err != nil {
-		logrus.Fatalf("error generating fake data: %v", err)
+	var wg sync.WaitGroup
+	wg.Add(5)
+	for i := 0; i < 10; i++ {
+		go func(i int) {
+			defer wg.Done()
+			if err := generator.GenerateFakeData(db, 1000); err != nil {
+				logrus.Errorf("error generating fake data for iteration %d", err)
+			}
+		}(i)
 	}
-
+	wg.Wait()
 	logrus.Info("fake data generation completed successfully")
 
 }
