@@ -1,4 +1,4 @@
-# goAvitoDB
+# go-avito-db
 
 ### Launch
 
