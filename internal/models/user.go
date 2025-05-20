@@ -1,19 +1,12 @@
 package models
 
-import (
-	"gorm.io/gorm"
-)
-
 type User struct {
-	gorm.Model
-	LocationID  uint   `gorm:"not null;index"`
-	Username    string `gorm:"not null;index"`
-	Email       string `gorm:"unique;not null"`
-	PhoneNumber string `gorm:"unique;not null"`
-	Rating      float64
-	Password    Password
-	Posts       []Post
-	Reviews     []Review
-	Chats 		[]Chat `gorm:"many2many:user_chats;constraint:OnDelete:CASCADE"`
-
+	ID       int    `db:"id"`
+	Username string `db:"username"`
+	Email    string `db:"email"`
+	PhoneNumber string `db:"phone_number"`
+	Password string `db:"password_hash"`
+	ProfileImage string `db:"profile_image"`
+	CityID int `db:"city_id"`
+	UserTypeID int `db:"user_type_id"`
 }
