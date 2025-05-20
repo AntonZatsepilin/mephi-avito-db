@@ -5,13 +5,13 @@ services:
     profiles: [ generate ]
     env_file: ".env"
     depends_on:
-      database:
+      db:
         condition: service_healthy
     build:
       context: .
       dockerfile: Dockerfile
 
-  database:
+  db:
     container_name: avito-db
     image: postgres:latest
     restart: no

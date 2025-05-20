@@ -1,4 +1,4 @@
-FROM golang:1.23.1-alpine
+FROM golang:1.24.2-alpine3.20
 
 WORKDIR /app
 
@@ -8,7 +8,14 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o main ./cmd
+COPY .env .env
+COPY schema /app/schema
+
+RUN apk add --no-cache curl \
+    && curl -L https://github.com/golang-migrate/migrate/releases/download/v4.15.2/migrate.linux-amd64.tar.gz | tar xvz \
+    && mv migrate /usr/local/bin
+
+RUN go build -o main ./cmd/server
 
 EXPOSE 8080
 
