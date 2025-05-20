@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/AntonZatsepilin/goAvitoDB.git/internal/repository"
+	"github.com/AntonZatsepilin/mephi-avito-db/internal/repository"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
@@ -28,9 +28,11 @@ func main() {
 		logrus.Fatalf("failed to initialize db: %s", err.Error())
 	}
 
-	// repos := repository.NewRepository(db)
+	repos := repository.NewRepository(db)
 	
 	logrus.Info("app initialized")
+
+	repos.Generator.GenerateCountries(1000)
 
 
 	if err := db.Close(); err != nil {

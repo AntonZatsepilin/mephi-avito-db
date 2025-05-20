@@ -5,6 +5,7 @@ import (
 )
 
 type Generator interface {
+	GenerateCountries(n int) error
 }
 
 type Repository struct {

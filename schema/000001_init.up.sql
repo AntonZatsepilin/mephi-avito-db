@@ -121,3 +121,5 @@ CREATE TABLE files (
       OR (message_id IS NULL AND review_id IS NOT NULL)
       )
 );
+
+INSERT INTO user_types (type) VALUES ('admin'), ('user'), ('moderator');
