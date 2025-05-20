@@ -18,7 +18,7 @@ func main() {
 	db, err := repository.NewPostgresDB(repository.Config{
 		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
-		Username: os.Getenv("DB_USERNAME"),
+		Username: os.Getenv("DB_USER"),
 		DBname:   os.Getenv("DB_NAME"),
 		SSLmode:  os.Getenv("DB_SSL_MODE"),
 		Password: os.Getenv("DB_PASSWORD"),
@@ -28,7 +28,7 @@ func main() {
 		logrus.Fatalf("failed to initialize db: %s", err.Error())
 	}
 
-	repos := repository.NewRepository(db)
+	// repos := repository.NewRepository(db)
 	
 	logrus.Info("app initialized")
 
