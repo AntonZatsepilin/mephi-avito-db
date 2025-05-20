@@ -14,7 +14,7 @@ func GenerateFakeData(db *gorm.DB, userCount int) error {
 
 	// Генерация локаций
 	var locations []models.Location
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 1000; i++ {
 		location := models.Location{
 			City:    gofakeit.City(),
 			Country: gofakeit.Country(),
@@ -34,7 +34,7 @@ func GenerateFakeData(db *gorm.DB, userCount int) error {
 			Email:       gofakeit.Email(),
 			PhoneNumber: gofakeit.Phone(),
 			Rating:      gofakeit.Float64Range(1.0, 5.0),
-			LocationID:  uint(rand.Intn(10) + 1), // Ссылка на Location
+			LocationID:  uint(rand.Intn(1000) + 1), // Ссылка на Location
 		}
 		users = append(users, user)
 	}
@@ -44,18 +44,46 @@ func GenerateFakeData(db *gorm.DB, userCount int) error {
 		return err
 	}
 
-	// Генерация категорий
-	var categories []models.Category
-	for i := 0; i < 5; i++ {
-		category := models.Category{
-			Name: gofakeit.Word(),
-		}
-		categories = append(categories, category)
-	}
+			 //Генерация записей в таблице Passwords
+for _, user := range users {
+    password := models.Password{
+        UserID:    user.ID,
+        Hash:      []byte(gofakeit.Password(true, true, true, true, false, 16)),
+        Salt:      []byte(gofakeit.Password(true, true, true, true, false, 8)),
+        Algorithm: "bcrypt",
+    }
+    if err := db.Create(&password).Error; err != nil {
+        return err
+    }
+}
 
-	if err := db.Create(&categories).Error; err != nil {
-		return err
-	}
+// Генерация вложенных категорий
+var categories []models.Category
+for i := 0; i < 10; i++ {
+    parentCategory := models.Category{
+        Name: gofakeit.ProductCategory(),
+    }
+    if err := db.Create(&parentCategory).Error; err != nil {
+        return err
+    }
+    categories = append(categories, parentCategory)
+
+    for j := 0; j < 1; j++ {
+        childCategory := models.Category{
+            Name: gofakeit.ProductCategory(),
+        }
+        if err := db.Create(&childCategory).Error; err != nil {
+            return err
+        }
+        categories = append(categories, childCategory)
+        // Создаем связь между категориями, если это не одна и та же категория
+        if (parentCategory.ID != childCategory.ID) && (parentCategory.Name != childCategory.Name){
+            if err := db.Model(&parentCategory).Association("Children").Append(&childCategory); err != nil {
+                return err
+            }
+        }
+    }
+}
 
 	// Генерация постов
 	var posts []models.Post
@@ -64,6 +92,7 @@ func GenerateFakeData(db *gorm.DB, userCount int) error {
 			UserID:      users[rand.Intn(len(users))].ID,
 			LocationID:  locations[rand.Intn(len(locations))].ID,
 			CategoryID:  categories[rand.Intn(len(categories))].ID,
+			ReviewID:    uint(rand.Intn(userCount) + 1),
 			Title:       gofakeit.Sentence(5),
 			Description: gofakeit.Paragraph(1, 3, 10, " "),
 			Price:       gofakeit.Price(10, 1000),
@@ -80,7 +109,7 @@ func GenerateFakeData(db *gorm.DB, userCount int) error {
 
 	// Генерация чатов и сообщений
 	var chats []models.Chat
-	for i := 0; i < userCount/3; i++ {
+	for i := 0; i < userCount/2; i++ {
 		chat := models.Chat{}
 		chats = append(chats, chat)
 	}
@@ -160,27 +189,28 @@ func GenerateFakeData(db *gorm.DB, userCount int) error {
 		return err
 	}
 
-	// Генерация вложенных категорий
-	for i := 0; i < userCount; i++ {
-		parentCategory := models.Category{
-			Name: gofakeit.Word(),
-		}
-		if err := db.Create(&parentCategory).Error; err != nil {
-			return err
-		}
+	// // Генерация вложенных категорий
+	// for i := 0; i < userCount; i++ {
+	// 	parentCategory := models.Category{
+	// 		Name: gofakeit.ProductCategory(),
+	// 	}
+	// 	if err := db.Create(&parentCategory).Error; err != nil {
+	// 		return err
+	// 	}
 
-		for j := 0; j < userCount; j++ {
-			childCategory := models.Category{
-				Name: gofakeit.Word(),
-			}
-			if err := db.Create(&childCategory).Error; err != nil {
-				return err
-			}
-			// Создаем связь между категориями
-			if err := db.Model(&parentCategory).Association("Children").Append(&childCategory); err != nil {
-				return err
-			}
-		}
-	}
+	// 	for j := 0; j < userCount; j++ {
+	// 		childCategory := models.Category{
+	// 			Name: gofakeit.ProductCategory(),
+	// 		}
+	// 		if err := db.Create(&childCategory).Error; err != nil {
+	// 			return err
+	// 		}
+	// 		// Создаем связь между категориями
+	// 		if err := db.Model(&parentCategory).Association("Children").Append(&childCategory); err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
+
 	return nil
 }

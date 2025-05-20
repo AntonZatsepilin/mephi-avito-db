@@ -56,9 +56,10 @@ func main() {
 	}
 
 	logrus.Info("database migration completed successfully")
-	var wg sync.WaitGroup
+
+var wg sync.WaitGroup
 	wg.Add(5)
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 50; i++ {
 		go func(i int) {
 			defer wg.Done()
 			if err := generator.GenerateFakeData(db, 1000); err != nil {
@@ -70,6 +71,7 @@ func main() {
 	logrus.Info("fake data generation completed successfully")
 
 }
+
 
 func initConfig() error {
 	viper.AddConfigPath("configs")

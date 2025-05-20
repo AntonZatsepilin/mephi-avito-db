@@ -8,7 +8,7 @@ type User struct {
 	gorm.Model
 	LocationID  uint   `gorm:"not null;index"`
 	Username    string `gorm:"not null;index"`
-	Email       string `gorm:"unique;not null"`
+	Email       string `gorm:"unique;not null;unique"`
 	PhoneNumber string `gorm:"unique;not null"`
 	Rating      float64
 	Password    Password
