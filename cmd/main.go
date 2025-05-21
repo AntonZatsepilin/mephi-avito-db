@@ -32,10 +32,12 @@ func main() {
 	
 	logrus.Info("app initialized")
 
-	repos.Generator.GenerateLocation(100)
+	repos.Generator.GenerateLocation(10)
 	logrus.Info("locations generated")
-	repos.Generator.GenerateCategories(100)
+	repos.Generator.GenerateCategories(10)
 	logrus.Info("categories generated")
+	repos.Generator.GenerateUsers(100)
+	logrus.Info("users generated")
 
 
 	if err := db.Close(); err != nil {

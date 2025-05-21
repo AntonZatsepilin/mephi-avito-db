@@ -7,6 +7,7 @@ import (
 type Generator interface {
 	GenerateLocation(n int) error
 	GenerateCategories(n int) error
+	GenerateUsers(n int) error
 }
 
 type Repository struct {

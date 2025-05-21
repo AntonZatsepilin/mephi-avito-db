@@ -1,9 +1,11 @@
 package repository
 
 import (
+	"errors"
 	"math/rand"
 	"time"
 
+	"github.com/AntonZatsepilin/mephi-avito-db/internal/models"
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/jmoiron/sqlx"
 )
@@ -102,3 +104,105 @@ func (g *GeneratorPostgres) GenerateCategories(n int) error {
     return nil
 }
 
+func (g *GeneratorPostgres) GenerateUsers(n int) error {
+    rand.Seed(time.Now().UnixNano())
+
+    // Получаем существующие user_types
+    var userTypes []int
+    if err := g.db.Select(&userTypes, "SELECT id FROM user_types"); err != nil {
+        return err
+    }
+    if len(userTypes) == 0 {
+        return errors.New("user types not found")
+    }
+
+    // Получаем существующие city_ids
+    var cityIDs []int
+    if err := g.db.Select(&cityIDs, "SELECT id FROM cities"); err != nil {
+        return err
+    }
+
+    usedUsernames := make(map[string]struct{})
+    usedEmails := make(map[string]struct{})
+
+    tx, err := g.db.Beginx()
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+
+    const query = `
+        INSERT INTO users (
+            username, email, phone_number, password_hash, 
+            created_at, profile_image, rating, user_type_id, city_id
+        ) VALUES (
+            :username, :email, :phone_number, :password_hash, 
+            :created_at, :profile_image, :rating, :user_type_id, :city_id
+        )`
+
+    for i := 0; i < n; i++ {
+        // Генерация уникального username
+        username := gofakeit.Username()
+        for {
+            if _, exists := usedUsernames[username]; !exists {
+                usedUsernames[username] = struct{}{}
+                break
+            }
+            username = gofakeit.Username()
+        }
+
+        // Генерация уникального email
+        email := gofakeit.Email()
+        for {
+            if _, exists := usedEmails[email]; !exists {
+                usedEmails[email] = struct{}{}
+                break
+            }
+            email = gofakeit.Email()
+        }
+
+        // Генерация остальных полей
+        user := models.User{
+            Username:     username,
+            Email:        email,
+            PhoneNumber:  generateNullableString(0.5, gofakeit.Phone),
+            PasswordHash: "$2a$10$3YBrvN8IX/ZjWIEac5.Oxu4xGXg3Q7FmHGYcCjkrGjTZ9jML7qD4a", // Пример хэша
+            CreatedAt:    randomTime(),
+            ProfileImage: func() *string { s := gofakeit.URL(); return &s }(),
+            Rating:       generateNullableRating(0.7),
+            UserTypeID:   userTypes[rand.Intn(len(userTypes))],
+            CityID:       generateNullableCityID(cityIDs, 0.8),
+        }
+
+        if _, err := tx.NamedExec(query, &user); err != nil {
+            return err
+        }
+    }
+
+    return tx.Commit()
+}
+
+// Вспомогательные функции
+func generateNullableString(nullChance float32, generator func() string) *string {
+    if rand.Float32() > nullChance {
+        return nil
+    }
+    s := generator()
+    return &s
+}
+
+func generateNullableRating(nullChance float32) *float32 {
+    if rand.Float32() > nullChance {
+        return nil
+    }
+    r := float32(rand.Intn(501)) / 100 // 0.00 - 5.00
+    return &r
+}
+
+func generateNullableCityID(cityIDs []int, nullChance float32) *int {
+    if len(cityIDs) == 0 || rand.Float32() < nullChance {
+        return nil
+    }
+    id := cityIDs[rand.Intn(len(cityIDs))]
+    return &id
+}
