@@ -165,7 +165,7 @@ func (g *GeneratorPostgres) GenerateUsers(n int) error {
         user := models.User{
             Username:     username,
             Email:        email,
-            PhoneNumber:  generateNullableString(0.5, gofakeit.Phone),
+            PhoneNumber:  gofakeit.Phone(),
             PasswordHash: "$2a$10$3YBrvN8IX/ZjWIEac5.Oxu4xGXg3Q7FmHGYcCjkrGjTZ9jML7qD4a", // Пример хэша
             CreatedAt:    randomTime(),
             ProfileImage: func() *string { s := gofakeit.URL(); return &s }(),
@@ -204,5 +204,233 @@ func generateNullableCityID(cityIDs []int, nullChance float32) *int {
         return nil
     }
     id := cityIDs[rand.Intn(len(cityIDs))]
+    return &id
+}
+
+func (g *GeneratorPostgres) GenerateListings(n int) error {
+    rand.Seed(time.Now().UnixNano())
+    // Получаем существующие ID
+    var userIDs, categoryIDs, cityIDs []int
+    if err := g.db.Select(&userIDs, "SELECT id FROM users"); err != nil {
+        return err
+    }
+    if err := g.db.Select(&categoryIDs, "SELECT id FROM categories"); err != nil {
+        return err
+    }
+    if err := g.db.Select(&cityIDs, "SELECT id FROM cities"); err != nil {
+        return err
+    }
+
+    if len(userIDs) == 0 || len(categoryIDs) == 0 || len(cityIDs) == 0 {
+        return errors.New("недостаточно данных в родительских таблицах")
+    }
+
+    tx, err := g.db.Beginx()
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+
+    for i := 0; i < n; i++ {
+        listing := models.Listing{
+            UserID:     userIDs[rand.Intn(len(userIDs))],
+            CategoryID: categoryIDs[rand.Intn(len(categoryIDs))],
+            CityID:     cityIDs[rand.Intn(len(cityIDs))],
+            Title:      gofakeit.Sentence(5),
+            Description: generateNullableString(0.3, func() string {
+                return gofakeit.Paragraph(2, 3, 5, "\n")
+            }),
+            Price:      rand.Intn(100000) + 100,
+            CreatedAt:  randomTime(),
+            IsActive:   rand.Float32() < 0.8,
+            ViewCount:  rand.Intn(10000),
+        }
+
+        _, err := tx.NamedExec(`
+            INSERT INTO listings (
+                user_id, category_id, city_id, title, 
+                description, price, created_at, is_active, view_count
+            ) VALUES (
+                :user_id, :category_id, :city_id, :title, 
+                :description, :price, :created_at, :is_active, :view_count
+            )`, &listing)
+        if err != nil {
+            return err
+        }
+    }
+    return tx.Commit()
+}
+
+func (g *GeneratorPostgres) GenerateReviews(n int) error {
+    rand.Seed(time.Now().UnixNano())
+    var userIDs []int
+    var listingIDs []int
+    if err := g.db.Select(&userIDs, "SELECT id FROM users"); err != nil {
+        return err
+    }
+    if err := g.db.Select(&listingIDs, "SELECT id FROM listings WHERE is_active = true"); err != nil {
+        return err
+    }
+
+    tx, err := g.db.Beginx()
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+
+    for i := 0; i < n; i++ {
+        review := models.Review{
+            UserID:    generateNullableID(userIDs, 0.1), // 10% chance NULL
+            ListingID: listingIDs[rand.Intn(len(listingIDs))],
+            Comment:   gofakeit.Sentence(10),
+            Rating:    int16(rand.Intn(5) + 1), // 1-5
+            CreatedAt: randomTime(),
+        }
+
+        _, err := tx.NamedExec(`
+            INSERT INTO reviews (
+                user_id, listing_id, comment, rating, created_at
+            ) VALUES (
+                :user_id, :listing_id, :comment, :rating, :created_at
+            )`, &review)
+        if err != nil {
+            return err
+        }
+    }
+    return tx.Commit()
+}
+
+func (g *GeneratorPostgres) GenerateChatsAndMembers(n int) error {
+    rand.Seed(time.Now().UnixNano())
+    var userIDs []int
+    if err := g.db.Select(&userIDs, "SELECT id FROM users"); err != nil {
+        return err
+    }
+
+    for i := 0; i < n; i++ {
+        // Создаём чат
+        var chatID int
+        err := g.db.QueryRowx(`
+            INSERT INTO chats (name, created_at) 
+            VALUES ($1, $2) 
+            RETURNING id`,
+            gofakeit.Word,
+            randomTime(),
+        ).Scan(&chatID)
+        if err != nil {
+            return err
+        }
+
+        // Добавляем участников (2-10 пользователей)
+        membersCount := 2
+        selectedUsers := make(map[int]struct{})
+        for j := 0; j < membersCount; j++ {
+            userID := userIDs[rand.Intn(len(userIDs))]
+            if _, exists := selectedUsers[userID]; exists {
+                continue
+            }
+            selectedUsers[userID] = struct{}{}
+            
+            _, err := g.db.Exec(`
+                INSERT INTO chat_members (chat_id, user_id)
+                VALUES ($1, $2)
+                ON CONFLICT DO NOTHING`,
+                chatID,
+                userID,
+            )
+            if err != nil {
+                return err
+            }
+        }
+    }
+    return nil
+}
+
+func (g *GeneratorPostgres) GenerateMessages(n int) error {
+    rand.Seed(time.Now().UnixNano())
+    var chatIDs []int
+    var userIDs []int
+    if err := g.db.Select(&chatIDs, "SELECT id FROM chats"); err != nil {
+        return err
+    }
+    if err := g.db.Select(&userIDs, "SELECT id FROM users"); err != nil {
+        return err
+    }
+
+    tx, err := g.db.Beginx()
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+
+    for i := 0; i < n; i++ {
+        msg := models.Message{
+            ChatID:    chatIDs[rand.Intn(len(chatIDs))],
+            UserID:    generateNullableID(userIDs, 0.15),
+            Text:      gofakeit.Sentence(rand.Intn(20) + 5),
+            CreatedAt: randomTime(),
+        }
+
+        _, err := tx.NamedExec(`
+            INSERT INTO messages (chat_id, user_id, text, created_at)
+            VALUES (:chat_id, :user_id, :text, :created_at)`,
+            &msg,
+        )
+        if err != nil {
+            return err
+        }
+    }
+    return tx.Commit()
+}
+
+func (g *GeneratorPostgres) GenerateFiles(n int) error {
+    var messageIDs []int64
+    var reviewIDs []int64
+    if err := g.db.Select(&messageIDs, "SELECT id FROM messages"); err != nil {
+        return err
+    }
+    if err := g.db.Select(&reviewIDs, "SELECT id FROM reviews"); err != nil {
+        return err
+    }
+
+    tx, err := g.db.Beginx()
+    if err != nil {
+        return err
+    }
+    defer tx.Rollback()
+
+    for i := 0; i < n; i++ {
+        file := models.File{
+            Name:     gofakeit.InputName(),
+            FileURL:  gofakeit.URL(),
+        }
+
+        // Выбираем случайно к чему привязать файл
+        if rand.Float32() < 0.7 && len(messageIDs) > 0 { // 70% к сообщениям
+            msgID := messageIDs[rand.Intn(len(messageIDs))]
+            file.MessageID = &msgID
+        } else if len(reviewIDs) > 0 {
+            revID := reviewIDs[rand.Intn(len(reviewIDs))]
+            file.ReviewID = &revID
+        }
+
+        _, err := tx.NamedExec(`
+            INSERT INTO files (name, file_url, message_id, review_id)
+            VALUES (:name, :file_url, :message_id, :review_id)`,
+            &file,
+        )
+        if err != nil {
+            return err
+        }
+    }
+    return tx.Commit()
+}
+
+// Вспомогательная функция для генерации nullable ID
+func generateNullableID(ids []int, nullChance float32) *int {
+    if len(ids) == 0 || rand.Float32() < nullChance {
+        return nil
+    }
+    id := ids[rand.Intn(len(ids))]
     return &id
 }

@@ -65,7 +65,7 @@ CREATE TABLE listings (
 
 CREATE TABLE reviews (
     id           BIGSERIAL PRIMARY KEY,
-    user_id      INTEGER NOT NULL
+    user_id      INTEGER NULL
         REFERENCES users(id)
         ON UPDATE CASCADE ON DELETE SET NULL,
     listing_id   INTEGER NOT NULL
@@ -98,7 +98,7 @@ CREATE TABLE messages (
     chat_id      INTEGER NOT NULL
         REFERENCES chats(id)
         ON UPDATE CASCADE ON DELETE CASCADE,
-    user_id      INTEGER NOT NULL
+    user_id      INTEGER NULL
         REFERENCES users(id)
         ON UPDATE CASCADE ON DELETE SET NULL,
     text         TEXT NOT NULL,

@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"sync"
 
 	"github.com/AntonZatsepilin/mephi-avito-db/internal/repository"
 	"github.com/joho/godotenv"
@@ -31,13 +32,62 @@ func main() {
 	repos := repository.NewRepository(db)
 	
 	logrus.Info("app initialized")
+// 1. Параллельная генерация независимых сущностей
+var wg sync.WaitGroup
+wg.Add(2)
 
-	repos.Generator.GenerateLocation(10)
-	logrus.Info("locations generated")
-	repos.Generator.GenerateCategories(10)
-	logrus.Info("categories generated")
-	repos.Generator.GenerateUsers(100)
-	logrus.Info("users generated")
+go func() {
+    defer wg.Done()
+    repos.Generator.GenerateLocation(200)
+    logrus.Info("locations generated")
+}()
+
+go func() {
+    defer wg.Done()
+    repos.Generator.GenerateCategories(1000)
+    logrus.Info("categories generated")
+}()
+
+wg.Wait()
+
+// 2. Генерация пользователей с внутренним параллелизмом
+repos.Generator.GenerateUsers(50000)
+logrus.Info("users generated")
+
+// 3. Параллельная генерация зависимых сущностей
+wg.Add(4)
+
+// Листинги
+go func() {
+    defer wg.Done()
+    repos.Generator.GenerateListings(7000)
+    logrus.Info("listings generated")
+}()
+
+// Чаты
+go func() {
+    defer wg.Done()
+    repos.Generator.GenerateChatsAndMembers(10000)
+    logrus.Info("chats and members generated")
+}()
+
+// Файлы
+go func() {
+    defer wg.Done()
+    repos.Generator.GenerateFiles(20000)
+    logrus.Info("files generated")
+}()
+
+// Отзывы и сообщения последовательно
+go func() {
+    defer wg.Done()
+    repos.Generator.GenerateReviews(100000)
+    logrus.Info("reviews generated")
+    repos.Generator.GenerateMessages(100000)
+    logrus.Info("messages generated")
+}()
+
+wg.Wait()
 
 
 	if err := db.Close(); err != nil {
